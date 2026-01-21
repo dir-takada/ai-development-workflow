@@ -1,269 +1,122 @@
 'use client';
 
 import { useState } from 'react';
+import { useTransactions } from './hooks/useTransactions';
+import OverviewTab from './components/OverviewTab';
+import HistoryTab from './components/HistoryTab';
+import BreakdownTab from './components/BreakdownTab';
 
-type TaskStatus = 'Pending' | 'Running' | 'Completed';
-
-interface SubTask {
-  id: string;
-  title: string;
-  status: TaskStatus;
-}
-
-interface Task {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  subTasks: SubTask[];
-  isExpanded: boolean;
-}
+type Tab = 'overview' | 'history' | 'breakdown';
 
 export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [editingTitle, setEditingTitle] = useState('');
-  const [newSubTaskTitle, setNewSubTaskTitle] = useState<{ [key: string]: string }>({});
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [currentYear, setCurrentYear] = useState(2026);
+  const [currentMonth, setCurrentMonth] = useState(1);
+  const transactionContext = useTransactions();
 
-  const addTask = () => {
-    if (newTaskTitle.trim()) {
-      const newTask: Task = {
-        id: Date.now().toString(),
-        title: newTaskTitle,
-        status: 'Pending',
-        subTasks: [],
-        isExpanded: false,
-      };
-      setTasks([...tasks, newTask]);
-      setNewTaskTitle('');
-    }
-  };
-
-  const deleteTask = (taskId: string) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
-  };
-
-  const updateTaskStatus = (taskId: string, status: TaskStatus) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId ? { ...task, status } : task
-    ));
-  };
-
-  const startEditingTask = (taskId: string, title: string) => {
-    setEditingTaskId(taskId);
-    setEditingTitle(title);
-  };
-
-  const saveTaskEdit = (taskId: string) => {
-    if (editingTitle.trim()) {
-      setTasks(tasks.map(task =>
-        task.id === taskId ? { ...task, title: editingTitle } : task
-      ));
-    }
-    setEditingTaskId(null);
-    setEditingTitle('');
-  };
-
-  const toggleTaskExpanded = (taskId: string) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId ? { ...task, isExpanded: !task.isExpanded } : task
-    ));
-  };
-
-  const addSubTask = (taskId: string) => {
-    const title = newSubTaskTitle[taskId]?.trim();
-    if (title) {
-      const newSubTask: SubTask = {
-        id: Date.now().toString(),
-        title,
-        status: 'Pending',
-      };
-      setTasks(tasks.map(task =>
-        task.id === taskId
-          ? { ...task, subTasks: [...task.subTasks, newSubTask] }
-          : task
-      ));
-      setNewSubTaskTitle({ ...newSubTaskTitle, [taskId]: '' });
-    }
-  };
-
-  const deleteSubTask = (taskId: string, subTaskId: string) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId
-        ? { ...task, subTasks: task.subTasks.filter(st => st.id !== subTaskId) }
-        : task
-    ));
-  };
-
-  const updateSubTaskStatus = (taskId: string, subTaskId: string, status: TaskStatus) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId
-        ? {
-            ...task,
-            subTasks: task.subTasks.map(st =>
-              st.id === subTaskId ? { ...st, status } : st
-            )
-          }
-        : task
-    ));
-  };
-
-  const getStatusColor = (status: TaskStatus) => {
-    switch (status) {
-      case 'Pending': return 'bg-gray-200 text-gray-700';
-      case 'Running': return 'bg-blue-200 text-blue-700';
-      case 'Completed': return 'bg-green-200 text-green-700';
-    }
-  };
-
-  const statusOptions: TaskStatus[] = ['Pending', 'Running', 'Completed'];
+  if (!transactionContext.isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-600">読み込み中...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
-      <main className="mx-auto max-w-4xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            TODO管理アプリ
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            タスクとサブタスクを管理しましょう
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addTask()}
-              placeholder="新しいタスクを入力..."
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            />
-            <button
-              onClick={addTask}
-              className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
-            >
-              追加
-            </button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto py-8 px-4">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+            </svg>
+            <h1 className="text-3xl font-bold text-gray-900">家計簿アプリ</h1>
           </div>
+          <p className="text-gray-600">収入と支出を記録して、家計を管理しましょう</p>
         </div>
 
-        <div className="space-y-4">
-          {tasks.map(task => (
-            <div
-              key={task.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden"
-            >
-              <div className="p-4">
-                <div className="flex items-center gap-3">
-                  {task.subTasks.length > 0 && (
-                    <button
-                      onClick={() => toggleTaskExpanded(task.id)}
-                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    >
-                      {task.isExpanded ? '▼' : '▶'}
-                    </button>
-                  )}
-
-                  <div className="flex-1">
-                    {editingTaskId === task.id ? (
-                      <input
-                        type="text"
-                        value={editingTitle}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && saveTaskEdit(task.id)}
-                        onBlur={() => saveTaskEdit(task.id)}
-                        className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        autoFocus
-                      />
-                    ) : (
-                      <h3
-                        onClick={() => startEditingTask(task.id, task.title)}
-                        className="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-                      >
-                        {task.title}
-                      </h3>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={task.status}
-                      onChange={(e) => updateTaskStatus(task.id, e.target.value as TaskStatus)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(task.status)} border-0 cursor-pointer`}
-                    >
-                      {statusOptions.map(status => (
-                        <option key={status} value={status}>{status}</option>
-                      ))}
-                    </select>
-
-                    <button
-                      onClick={() => deleteTask(task.id)}
-                      className="px-3 py-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium transition-colors"
-                    >
-                      削除
-                    </button>
-                  </div>
-                </div>
-
-                {task.isExpanded && task.subTasks.length > 0 && (
-                  <div className="mt-4 ml-8 space-y-2">
-                    {task.subTasks.map(subTask => (
-                      <div
-                        key={subTask.id}
-                        className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded"
-                      >
-                        <span className="flex-1 text-gray-800 dark:text-gray-200">
-                          {subTask.title}
-                        </span>
-                        <select
-                          value={subTask.status}
-                          onChange={(e) => updateSubTaskStatus(task.id, subTask.id, e.target.value as TaskStatus)}
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(subTask.status)} border-0 cursor-pointer`}
-                        >
-                          {statusOptions.map(status => (
-                            <option key={status} value={status}>{status}</option>
-                          ))}
-                        </select>
-                        <button
-                          onClick={() => deleteSubTask(task.id, subTask.id)}
-                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm transition-colors"
-                        >
-                          削除
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="mt-3 flex gap-2">
-                  <input
-                    type="text"
-                    value={newSubTaskTitle[task.id] || ''}
-                    onChange={(e) => setNewSubTaskTitle({ ...newSubTaskTitle, [task.id]: e.target.value })}
-                    onKeyPress={(e) => e.key === 'Enter' && addSubTask(task.id)}
-                    placeholder="サブタスクを追加..."
-                    className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                  <button
-                    onClick={() => addSubTask(task.id)}
-                    className="px-4 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition-colors"
-                  >
-                    サブタスク追加
-                  </button>
-                </div>
-              </div>
+        {/* Tab Navigation */}
+        <div className="flex gap-4 mb-8">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${
+              activeTab === 'overview'
+                ? 'bg-white shadow-md text-gray-900'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              概要
             </div>
-          ))}
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${
+              activeTab === 'history'
+                ? 'bg-white shadow-md text-gray-900'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              取引履歴
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('breakdown')}
+            className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${
+              activeTab === 'breakdown'
+                ? 'bg-white shadow-md text-gray-900'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              </svg>
+              カテゴリ内訳
+            </div>
+          </button>
         </div>
 
-        {tasks.length === 0 && (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            タスクがありません。上のフォームから追加してください。
-          </div>
-        )}
-      </main>
+        {/* Tab Content */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          {activeTab === 'overview' && (
+            <OverviewTab
+              currentYear={currentYear}
+              currentMonth={currentMonth}
+              setCurrentYear={setCurrentYear}
+              setCurrentMonth={setCurrentMonth}
+              {...transactionContext}
+            />
+          )}
+          {activeTab === 'history' && (
+            <HistoryTab
+              currentYear={currentYear}
+              currentMonth={currentMonth}
+              setCurrentYear={setCurrentYear}
+              setCurrentMonth={setCurrentMonth}
+              {...transactionContext}
+            />
+          )}
+          {activeTab === 'breakdown' && (
+            <BreakdownTab
+              currentYear={currentYear}
+              currentMonth={currentMonth}
+              setCurrentYear={setCurrentYear}
+              setCurrentMonth={setCurrentMonth}
+              {...transactionContext}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
