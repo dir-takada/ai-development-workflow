@@ -176,7 +176,7 @@ export default function HistoryTab({
                       </span>
                     </div>
                     <div className="text-sm text-gray-600">
-                      {transaction.date.split('-').join('年', '月') + '日'} {transaction.description && `• ${transaction.description}`}
+                      {transaction.date.split('-')[0]}年{transaction.date.split('-')[1]}月{transaction.date.split('-')[2]}日 {transaction.description && `• ${transaction.description}`}
                     </div>
                   </div>
                   <div className="flex gap-2">
