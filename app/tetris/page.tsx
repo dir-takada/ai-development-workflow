@@ -218,9 +218,13 @@ export default function TetrisPage() {
     while (!isColliding(currentPiece, { x: newPos.x, y: newPos.y + 1 }, board)) {
       newPos.y++;
     }
-    setPosition(newPos);
-    moveDown();
-  }, [currentPiece, position, board, gameOver, isPaused, isColliding, moveDown]);
+    // Directly merge the piece at the final position to avoid async state issues
+    const mergedBoard = mergePieceToBoard(currentPiece, newPos, board);
+    const { newBoard, linesCleared } = clearLines(mergedBoard);
+    setBoard(newBoard);
+    setScore(prev => prev + linesCleared * 100);
+    spawnNewPiece();
+  }, [currentPiece, position, board, gameOver, isPaused, isColliding, mergePieceToBoard, clearLines, spawnNewPiece]);
 
   const resetGame = useCallback(() => {
     setBoard(createEmptyBoard());
