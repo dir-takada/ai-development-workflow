@@ -128,8 +128,17 @@ export default function TetrisPage() {
       const newBoard = boardState.map(row => [...row]);
       for (let y = 0; y < piece.shape.length; y++) {
         for (let x = 0; x < piece.shape[y].length; x++) {
-          if (piece.shape[y][x] && pos.y + y >= 0) {
-            newBoard[pos.y + y][pos.x + x] = 1;
+          const boardY = pos.y + y;
+          const boardX = pos.x + x;
+          // Add comprehensive boundary checks for all four directions
+          if (
+            piece.shape[y][x] &&
+            boardY >= 0 &&
+            boardY < BOARD_HEIGHT &&
+            boardX >= 0 &&
+            boardX < BOARD_WIDTH
+          ) {
+            newBoard[boardY][boardX] = 1;
           }
         }
       }
