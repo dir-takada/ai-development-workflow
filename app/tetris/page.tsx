@@ -302,8 +302,10 @@ export default function TetrisPage() {
     if (currentPiece && !gameOver) {
       for (let y = 0; y < currentPiece.shape.length; y++) {
         for (let x = 0; x < currentPiece.shape[y].length; x++) {
-          if (currentPiece.shape[y][x] && position.y + y >= 0) {
-            displayBoard[position.y + y][position.x + x] = 2;
+          const boardY = position.y + y;
+          const boardX = position.x + x;
+          if (currentPiece.shape[y][x] && boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
+            displayBoard[boardY][boardX] = 2;
           }
         }
       }
