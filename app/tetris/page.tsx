@@ -164,7 +164,7 @@ export default function TetrisPage() {
     return { newBoard, linesCleared };
   }, []);
 
-  const spawnNewPiece = useCallback(() => {
+  const spawnNewPiece = useCallback((currentBoard: number[][]) => {
     const piece = nextPiece;
     const startX = Math.floor(BOARD_WIDTH / 2) - Math.floor(piece.shape[0].length / 2);
     const startY = 0;
@@ -173,13 +173,13 @@ export default function TetrisPage() {
     setPosition({ x: startX, y: startY });
     setNextPiece(getRandomTetromino());
 
-    if (isColliding(piece, { x: startX, y: startY }, board)) {
+    if (isColliding(piece, { x: startX, y: startY }, currentBoard)) {
       setGameOver(true);
       if (gameLoopRef.current) {
         clearInterval(gameLoopRef.current);
       }
     }
-  }, [nextPiece, board, isColliding]);
+  }, [nextPiece, isColliding]);
 
   const moveDown = useCallback(() => {
     if (!currentPiece || gameOver || isPaused) return;
@@ -193,7 +193,7 @@ export default function TetrisPage() {
       const { newBoard, linesCleared } = clearLines(mergedBoard);
       setBoard(newBoard);
       setScore(prev => prev + linesCleared * 100);
-      spawnNewPiece();
+      spawnNewPiece(newBoard);
     }
   }, [currentPiece, position, board, gameOver, isPaused, isColliding, mergePieceToBoard, clearLines, spawnNewPiece]);
 
@@ -232,7 +232,7 @@ export default function TetrisPage() {
     const { newBoard, linesCleared } = clearLines(mergedBoard);
     setBoard(newBoard);
     setScore(prev => prev + linesCleared * 100);
-    spawnNewPiece();
+    spawnNewPiece(newBoard);
   }, [currentPiece, position, board, gameOver, isPaused, isColliding, mergePieceToBoard, clearLines, spawnNewPiece]);
 
   const resetGame = useCallback(() => {
@@ -246,9 +246,9 @@ export default function TetrisPage() {
 
   useEffect(() => {
     if (!currentPiece) {
-      spawnNewPiece();
+      spawnNewPiece(board);
     }
-  }, [currentPiece, spawnNewPiece]);
+  }, [currentPiece, board, spawnNewPiece]);
 
   useEffect(() => {
     if (gameOver || isPaused) return;
