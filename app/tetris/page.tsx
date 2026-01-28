@@ -228,12 +228,12 @@ export default function TetrisPage() {
 
   const resetGame = useCallback(() => {
     setBoard(createEmptyBoard());
+    setCurrentPiece(null);
     setScore(0);
     setGameOver(false);
     setIsPaused(false);
     setNextPiece(getRandomTetromino());
-    spawnNewPiece();
-  }, [spawnNewPiece]);
+  }, []);
 
   useEffect(() => {
     if (!currentPiece) {
