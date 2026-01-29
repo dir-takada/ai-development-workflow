@@ -1,238 +1,164 @@
 'use client';
 
-import { useState } from 'react';
-import { Transaction, INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '../types';
-import { getMonthlyTransactions, calculateMonthlyStats, formatCurrency } from '../utils/calculations';
+import { Transaction } from '../types';
+import { getMonthlyTransactions, calculateMonthlyStats, calculateCategoryBreakdown, formatCurrency } from '../utils/calculations';
+import PieChart from './PieChart';
 
 interface OverviewTabProps {
   transactions: Transaction[];
-  addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   currentYear: number;
   currentMonth: number;
   setCurrentYear: (year: number) => void;
   setCurrentMonth: (month: number) => void;
 }
 
+const CATEGORY_ICONS: Record<string, string> = {
+  '住居': '🏠',
+  '交通費': '🚗',
+  '光熱費': '💡',
+  '食費': '🍽️',
+  '娯楽': '🎮',
+  '外食': '🍔',
+};
+
 export default function OverviewTab({
   transactions,
-  addTransaction,
   currentYear,
   currentMonth,
-  setCurrentYear,
-  setCurrentMonth,
 }: OverviewTabProps) {
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formType, setFormType] = useState<'income' | 'expense'>('expense');
-  const [formAmount, setFormAmount] = useState('');
-  const [formCategory, setFormCategory] = useState('');
-  const [formDescription, setFormDescription] = useState('');
-  const [formDate, setFormDate] = useState(
-    `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`
-  );
-
   const monthlyTransactions = getMonthlyTransactions(transactions, currentYear, currentMonth);
   const stats = calculateMonthlyStats(monthlyTransactions);
+  const expenseBreakdown = calculateCategoryBreakdown(monthlyTransactions, 'expense');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formAmount || !formCategory || !formDate) return;
+  // Calculate total balance (mock data for demonstration)
+  const totalBalance = 1092567;
 
-    addTransaction({
-      type: formType,
-      amount: parseFloat(formAmount),
-      category: formCategory,
-      description: formDescription,
-      date: formDate,
-    });
-
-    setFormAmount('');
-    setFormCategory('');
-    setFormDescription('');
-    setIsFormOpen(false);
-  };
-
-  const categories = formType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  // Get recent transactions
+  const recentTransactions = [...monthlyTransactions]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 5);
 
   return (
-    <div>
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          {currentYear}年{currentMonth}月の収支
-        </h2>
-        <div className="flex gap-2 justify-center">
-          <button
-            onClick={() => {
-              if (currentMonth === 1) {
-                setCurrentYear(currentYear - 1);
-                setCurrentMonth(12);
-              } else {
-                setCurrentMonth(currentMonth - 1);
-              }
-            }}
-            className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded"
-          >
-            ← 前月
-          </button>
-          <button
-            onClick={() => {
-              if (currentMonth === 12) {
-                setCurrentYear(currentYear + 1);
-                setCurrentMonth(1);
-              } else {
-                setCurrentMonth(currentMonth + 1);
-              }
-            }}
-            className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded"
-          >
-            次月 →
-          </button>
+    <div className="space-y-6">
+      {/* Total Balance Card */}
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 text-white shadow-lg">
+        <div className="text-sm text-gray-300 mb-2">総資産</div>
+        <div className="text-4xl font-bold mb-1">{formatCurrency(totalBalance)}</div>
+      </div>
+
+      {/* Income and Expense Summary */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-green-500">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <span className="text-sm text-gray-600">今月の収入</span>
+          </div>
+          <div className="text-xl font-bold text-green-600">{formatCurrency(stats.income)}</div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="text-red-500">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+              </svg>
+            </div>
+            <span className="text-sm text-gray-600">今月の支出</span>
+          </div>
+          <div className="text-xl font-bold text-red-600">{formatCurrency(stats.expense)}</div>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-green-700 font-medium">収入</span>
-            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-          <div className="text-2xl font-bold text-green-700">{formatCurrency(stats.income)}</div>
-          <div className="text-xs text-green-600 mt-1">0件の取引</div>
-        </div>
+      {/* Category Breakdown */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">カテゴリ別支出</h3>
 
-        <div className="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-lg border border-red-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-red-700 font-medium">支出</span>
-            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-            </svg>
-          </div>
-          <div className="text-2xl font-bold text-red-700">{formatCurrency(stats.expense)}</div>
-          <div className="text-xs text-red-600 mt-1">1件の取引</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-blue-700 font-medium">収支</span>
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <div className={`text-2xl font-bold ${stats.balance >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-            {stats.balance >= 0 ? '' : '-'}{formatCurrency(Math.abs(stats.balance))}
-          </div>
-          <div className="text-xs text-blue-600 mt-1">
-            {stats.balance >= 0 ? '黒字' : '赤字'}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-6">
-        <button
-          onClick={() => setIsFormOpen(!isFormOpen)}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          新しい取引を追加
-        </button>
-
-        {isFormOpen && (
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">取引種類</label>
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormType('income');
-                    setFormCategory('');
-                  }}
-                  className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
-                    formType === 'income'
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  収入
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormType('expense');
-                    setFormCategory('');
-                  }}
-                  className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
-                    formType === 'expense'
-                      ? 'bg-red-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  支出
-                </button>
+        {expenseBreakdown.length > 0 ? (
+          <>
+            <div className="flex justify-center mb-6">
+              <div className="w-48 h-48">
+                <PieChart data={expenseBreakdown} type="expense" />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">金額</label>
-              <input
-                type="number"
-                value={formAmount}
-                onChange={(e) => setFormAmount(e.target.value)}
-                placeholder="0"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
+            <div className="space-y-3">
+              {expenseBreakdown.slice(0, 6).map((item, index) => (
+                <div key={item.category} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="text-2xl">
+                      {CATEGORY_ICONS[item.category] || '📊'}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">{item.category}</span>
+                        <span className="text-xs text-gray-500">{item.percentage.toFixed(0)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                        <div
+                          className="bg-purple-500 h-1.5 rounded-full"
+                          style={{ width: `${item.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm font-bold text-gray-900 ml-3">
+                    {formatCurrency(item.amount)}
+                  </div>
+                </div>
+              ))}
             </div>
+          </>
+        ) : (
+          <div className="text-center py-8 text-gray-400">
+            <div className="text-4xl mb-2">📊</div>
+            <p className="text-sm">支出データがありません</p>
+          </div>
+        )}
+      </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">日付</label>
-              <input
-                type="date"
-                value={formDate}
-                onChange={(e) => setFormDate(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+      {/* Recent Transactions */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">最近の取引</h3>
+          <button className="text-blue-600 text-sm font-medium">
+            すべて見る &gt;
+          </button>
+        </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">カテゴリ</label>
-              <select
-                value={formCategory}
-                onChange={(e) => setFormCategory(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">カテゴリを選択してください</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">説明（任意）</label>
-              <input
-                type="text"
-                value={formDescription}
-                onChange={(e) => setFormDescription(e.target.value)}
-                placeholder="詳細を入力してください"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-            >
-              追加
-            </button>
-          </form>
+        {recentTransactions.length > 0 ? (
+          <div className="space-y-3">
+            {recentTransactions.map((transaction) => (
+              <div key={transaction.id} className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-xl">
+                    {CATEGORY_ICONS[transaction.category] || '💰'}
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 text-sm">
+                      {transaction.description || transaction.category}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {transaction.category} • {transaction.date.split('-')[1]}月{transaction.date.split('-')[2]}日
+                    </div>
+                  </div>
+                </div>
+                <div className={`font-bold text-sm ${
+                  transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-400">
+            <div className="text-4xl mb-2">📝</div>
+            <p className="text-sm">取引がありません</p>
+          </div>
         )}
       </div>
     </div>

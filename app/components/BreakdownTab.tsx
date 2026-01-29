@@ -26,122 +26,129 @@ export default function BreakdownTab({
   const breakdown = calculateCategoryBreakdown(monthlyTransactions, viewType);
 
   return (
-    <div>
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">カテゴリ内訳</h2>
-        <div className="flex gap-2 justify-center mb-4">
-          <button
-            onClick={() => {
-              if (currentMonth === 1) {
-                setCurrentYear(currentYear - 1);
-                setCurrentMonth(12);
-              } else {
-                setCurrentMonth(currentMonth - 1);
-              }
-            }}
-            className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded"
-          >
-            ← 前月
-          </button>
-          <span className="px-4 py-1 bg-gray-100 rounded font-medium">
-            {currentYear}年{currentMonth}月
-          </span>
-          <button
-            onClick={() => {
-              if (currentMonth === 12) {
-                setCurrentYear(currentYear + 1);
-                setCurrentMonth(1);
-              } else {
-                setCurrentMonth(currentMonth + 1);
-              }
-            }}
-            className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded"
-          >
-            次月 →
-          </button>
-        </div>
-        <div className="flex gap-4 justify-center">
-          <button
-            onClick={() => setViewType('expense')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              viewType === 'expense'
-                ? 'bg-red-500 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            支出
-          </button>
-          <button
-            onClick={() => setViewType('income')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              viewType === 'income'
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            収入
-          </button>
-        </div>
+    <div className="space-y-4">
+      {/* Month Navigation */}
+      <div className="flex items-center justify-center gap-4">
+        <button
+          onClick={() => {
+            if (currentMonth === 1) {
+              setCurrentYear(currentYear - 1);
+              setCurrentMonth(12);
+            } else {
+              setCurrentMonth(currentMonth - 1);
+            }
+          }}
+          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <span className="text-lg font-bold text-gray-900 min-w-[120px] text-center">
+          {currentYear}年{currentMonth}月
+        </span>
+        <button
+          onClick={() => {
+            if (currentMonth === 12) {
+              setCurrentYear(currentYear + 1);
+              setCurrentMonth(1);
+            } else {
+              setCurrentMonth(currentMonth + 1);
+            }
+          }}
+          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Type Selector */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setViewType('expense')}
+          className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+            viewType === 'expense'
+              ? 'bg-red-500 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          支出
+        </button>
+        <button
+          onClick={() => setViewType('income')}
+          className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+            viewType === 'income'
+              ? 'bg-green-500 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          収入
+        </button>
       </div>
 
       {breakdown.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-          </svg>
-          <p>この月の{viewType === 'expense' ? '支出' : '収入'}データはまだありません</p>
+        <div className="text-center py-12 text-gray-400">
+          <div className="text-4xl mb-2">📊</div>
+          <p className="text-sm">この月の{viewType === 'expense' ? '支出' : '収入'}データはありません</p>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="flex items-center justify-center">
-            <PieChart data={breakdown} type={viewType} />
+        <div className="space-y-6">
+          {/* Pie Chart */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+            <div className="flex justify-center mb-2">
+              <div className="w-64 h-64">
+                <PieChart data={breakdown} type={viewType} />
+              </div>
+            </div>
           </div>
-          <div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 px-2 text-sm font-medium text-gray-700">カテゴリ</th>
-                    <th className="text-right py-2 px-2 text-sm font-medium text-gray-700">金額</th>
-                    <th className="text-right py-2 px-2 text-sm font-medium text-gray-700">割合</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {breakdown.map((item, index) => (
-                    <tr key={item.category} className="border-b border-gray-100">
-                      <td className="py-3 px-2">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: getColor(index, viewType) }}
-                          />
-                          <span className="text-sm font-medium text-gray-900">{item.category}</span>
-                        </div>
-                      </td>
-                      <td className="text-right py-3 px-2">
-                        <span className="text-sm font-semibold text-gray-900">
-                          {formatCurrency(item.amount)}
-                        </span>
-                      </td>
-                      <td className="text-right py-3 px-2">
-                        <span className="text-sm text-gray-600">
-                          {item.percentage.toFixed(1)}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-gray-300 font-bold">
-                    <td className="py-3 px-2 text-sm text-gray-900">合計</td>
-                    <td className="text-right py-3 px-2 text-sm text-gray-900">
-                      {formatCurrency(breakdown.reduce((sum, item) => sum + item.amount, 0))}
-                    </td>
-                    <td className="text-right py-3 px-2 text-sm text-gray-900">100.0%</td>
-                  </tr>
-                </tfoot>
-              </table>
+
+          {/* Category Table */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">カテゴリ別詳細</h3>
+            <div className="space-y-3">
+              {breakdown.map((item, index) => (
+                <div key={item.category} className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: getColor(index, viewType) }}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-900">{item.category}</span>
+                        <span className="text-xs text-gray-500">{item.percentage.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="h-2 rounded-full transition-all"
+                          style={{
+                            width: `${item.percentage}%`,
+                            backgroundColor: getColor(index, viewType),
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="text-sm font-bold text-gray-900 ml-3">
+                      {formatCurrency(item.amount)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Total */}
+            <div className="border-t-2 border-gray-300 mt-4 pt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-base font-bold text-gray-900">合計</span>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">100.0%</span>
+                  <span className="text-base font-bold text-gray-900">
+                    {formatCurrency(breakdown.reduce((sum, item) => sum + item.amount, 0))}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
